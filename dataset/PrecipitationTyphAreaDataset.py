@@ -11,11 +11,12 @@ import numpy as np
 
 class PrecipitationTyphAreaDataset(torch.utils.data.Dataset):
 
-    def __init__(self, root, file_name, if_train=False):
+    def __init__(self, root, file_name, max_typhoon_number=2, if_train=False):
         super(PrecipitationTyphAreaDataset, self).__init__()
         self.root = root
         self.file_name = file_name
         self.if_train = if_train
+        self.max_typhoon_number = max_typhoon_number
         with open(os.path.join(root, file_name), 'r') as dataset_file:
             self.dataset_list = dataset_file.readlines()
         dataset_file.close()
@@ -81,11 +82,11 @@ class PrecipitationTyphAreaDataset(torch.utils.data.Dataset):
             temp_input_mask = []
             if input_typh_point_list[i].any() == None or len(input_typh_point_list[i]) == 0:
                 temp_map = np.zeros((600, 500), dtype=np.float32)
-                for t in range(0, 3):
+                for t in range(0, self.max_typhoon_number):
                     temp_input_mask.append(temp_map)
             else:
                 for j in range(0, input_typh_point_list[i].shape[0]):
-                    if j > 2:
+                    if j > self.max_typhoon_number-1:
                         continue
                     x, y = input_typh_point_list[i][j][0], input_typh_point_list[i][j][1]
                     left_top_x = max(0, int(x-expand_pixels))
@@ -95,8 +96,8 @@ class PrecipitationTyphAreaDataset(torch.utils.data.Dataset):
                     temp_map = np.zeros((600, 500), dtype=np.float32)
                     temp_map[left_top_x:left_top_y,right_bot_x:right_bot_y] = 1.0
                     temp_input_mask.append(temp_map)
-                if input_typh_point_list[i].shape[0] < 3:
-                    for t in range(0, 3-input_typh_point_list[i].shape[0]):
+                if input_typh_point_list[i].shape[0] < self.max_typhoon_number:
+                    for t in range(0, self.max_typhoon_number-input_typh_point_list[i].shape[0]):
                         temp_map = np.zeros((600, 500), dtype=np.float32)
                         temp_input_mask.append(temp_map)
             temp_input_mask = np.array(temp_input_mask).astype(float)

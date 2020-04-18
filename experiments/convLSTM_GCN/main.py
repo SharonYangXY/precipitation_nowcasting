@@ -27,15 +27,16 @@ epoch = 30
 LR_step_size = 4000
 gamma = 0.7
 
-LR = 1e-3
+LR = 1e-3 # 1e-3
 WD = 1e-6
 
 seed = 666
 
+max_typhoon_number = 2
+
 np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
-
 
 # torch.backends.cudnn.benchmark = False
 # torch.backends.cudnn.deterministic =True
@@ -56,7 +57,7 @@ encoder_forecaster = nn.DataParallel(encoder_forecaster, device_ids=[0, 1]).to(c
 optimizer = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR, weight_decay=WD)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
 
-folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1]
+folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1] + "_lr_1e_3_seed_666_channel_region_50"
 
 OUT_LEN = cfg.RAIN.BENCHMARK.OUT_LEN
 evaluater = GPMEvaluation(seq_len=OUT_LEN, use_central=False)
@@ -76,9 +77,9 @@ typh_train_file_name = cfg.RAIN.TYPH_TRAIN_file_NAME
 typh_val_file_name = cfg.RAIN.TYPH_VAL_file_NAME
 typh_test_file_name = cfg.RAIN.TYPH_TEST_file_NAME
 
-typh_train_dataset = Dataset(root, typh_train_file_name)
-typh_test_dataset = Dataset(root, typh_test_file_name)
-typh_val_dataset = Dataset(root, typh_val_file_name)
+typh_train_dataset = Dataset(root, typh_train_file_name, max_typhoon_number)
+typh_test_dataset = Dataset(root, typh_test_file_name, max_typhoon_number)
+typh_val_dataset = Dataset(root, typh_val_file_name, max_typhoon_number)
 
 # no_typh_train_file_name = cfg.RAIN.NO_TYPH_TRAIN_file_NAME
 # no_typh_val_file_name = cfg.RAIN.NO_TYPH_VAL_file_NAME
