@@ -31,10 +31,10 @@ LR = 1e-3
 WD = 1e-6
 
 
-seed = 666
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+#seed = 666
+#np.random.seed(seed)
+#torch.manual_seed(seed)
+#torch.cuda.manual_seed_all(seed)
 
 
 # torch.backends.cudnn.benchmark = False
@@ -57,7 +57,7 @@ encoder_forecaster = nn.DataParallel(encoder_forecaster, device_ids=[0, 1]).to(c
 optimizer = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR, weight_decay=WD)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
 
-folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1]
+folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1] + "baseline_no_seed"
 
 OUT_LEN = cfg.RAIN.BENCHMARK.OUT_LEN
 evaluater = GPMEvaluation(seq_len=OUT_LEN, use_central=False)

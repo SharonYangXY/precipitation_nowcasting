@@ -89,21 +89,10 @@ class Encoder(nn.Module):
             setattr(self, 'stage'+str(index), make_layers(params))
             setattr(self, 'rnn'+str(index), rnn)
 
-        gcn_c = 128
-        
         # init the GCN.
-        self.gcn1 = GraphConvolution(gcn_c, gcn_c)
-        self.gcn2 = GraphConvolution(gcn_c, gcn_c)
-        self.gcn3 = GraphConvolution(gcn_c, gcn_c)
-        
-        self.fi_1 = nn.Linear(8, gcn_c, bias=True)
-        self.fi_1_back = nn.Linear(gcn_c, 8, bias=True)
-        
-        self.fi_2 = nn.Linear(192, gcn_c, bias=True)
-        self.fi_2_back = nn.Linear(gcn_c, 192, bias=True)
-        
-        self.fi_3 = nn.Linear(192, gcn_c, bias=True)
-        self.fi_3_back = nn.Linear(gcn_c, 192, bias=True)
+        self.gcn1 = GraphConvolution(8, 8)
+        self.gcn2 = GraphConvolution(192, 192)
+        self.gcn3 = GraphConvolution(192, 192)
         
 #         self.fi_1 = nn.Parameter(torch.FloatTensor(8, 8)) #.to(cfg.GLOBAL.DEVICE)
 #         self.fi_2 = nn.Parameter(torch.FloatTensor(192, 192))#.to(cfg.GLOBAL.DEVICE)
@@ -117,17 +106,13 @@ class Encoder(nn.Module):
 #         conv2 = nn.Conv2d(192*2, 192*1, 1)
 #         conv3 = nn.Conv2d(192*2, 192*1, 1)
         
-#         self.embedding_layer1 = nn.Linear(8, 8, bias=True)
-#         self.embedding_layer2 = nn.Linear(192, 192, bias=True)
-#         self.embedding_layer3 = nn.Linear(192, 192, bias=True)
+        self.embedding_layer1 = nn.Linear(8, 8, bias=False)
+        self.embedding_layer2 = nn.Linear(192, 192, bias=False)
+        self.embedding_layer3 = nn.Linear(192, 192, bias=False)
         
         self.gcn_list = nn.ModuleList([self.gcn1, self.gcn2, self.gcn3])
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-#         self.embedding_layers = nn.ModuleList([self.embedding_layer1, self.embedding_layer2, self.embedding_layer3])
-        
-        self.fi_layers = nn.ModuleList([self.fi_1, self.fi_2, self.fi_3])
-        self.fi_layers_back = nn.ModuleList([self.fi_1_back, self.fi_2_back, self.fi_3_back])
-        
+        self.embedding_layers = nn.ModuleList([self.embedding_layer1, self.embedding_layer2, self.embedding_layer3])
 #         self.conv_layers = nn.ModuleList([conv1, conv2, conv3])
 #         self.fi_list = [self.fi_1, self.fi_2, self.fi_3] #nn.ModuleList([fi_1, fi_2, fi_3])
 #         self.fi_list_a = [self.fi_1_a, self.fi_2_a, self.fi_3_a] #nn.ModuleList([fi_1_a, fi_2_a, fi_3_a])
@@ -191,17 +176,21 @@ class Encoder(nn.Module):
 #             node_feature_T = torch.mm(self.fi_list_a[i-1], node_feature_T)
             adj = F.softmax(node_feature.mm(node_feature_T)) # node_numbers x node_numbers.
             # Step 3. perform information propagtion on the graph.
-#             aaa = self.embedding_layers[i-1](node_feature)
-            aaa = self.fi_layers[i-1](node_feature)
+            aaa = self.embedding_layers[i-1](node_feature)
             after_gcn_feature = self.gcn_list[i-1](aaa, adj) # [18,192]
-            after_gcn_feature = self.fi_layers_back[i-1](after_gcn_feature)
             after_gcn_feature = after_gcn_feature.view(after_gcn_feature.size()[0], after_gcn_feature.size()[1], 1, 1).cuda() # (18, 192, 1, 1)
             #unpooling
             after_gcn_feature = F.upsample(after_gcn_feature, size=(input.size()[3], input.size()[4]), mode='nearest') # (18, 192, h, w)
             for t_idx in range(0, 6):
-                for ty_n in range(0, max_typhoon_number):
-                    residual_feature_maps[t_idx,b_idx,:] += after_gcn_feature[t_idx*max_typhoon_number+ty_n] * resized_b_gcn_masks[t_idx][ty_n].float()
+                if max_typhoon_number == 2:
+                    residual_feature_maps[t_idx,b_idx,:] = after_gcn_feature[t_idx*2+0] * resized_b_gcn_masks[t_idx][0].float() + after_gcn_feature[t_idx*2+1] * resized_b_gcn_masks[t_idx][1].float()
+                elif max_typhoon_number == 3:
+                    residual_feature_maps[t_idx,b_idx,:] = after_gcn_feature[t_idx*3+0] * resized_b_gcn_masks[t_idx][0].float() + after_gcn_feature[t_idx*3+1] * resized_b_gcn_masks[t_idx][1].float() + after_gcn_feature[t_idx*3+2] * resized_b_gcn_masks[t_idx][2].float()
+                else:
+                    assert 0 == 1
 #                     + after_gcn_feature[t_idx*3+1] * resized_b_gcn_masks[t_idx][1].float() + after_gcn_feature[t_idx*3+2] * resized_b_gcn_masks[t_idx][2].float()
+#                     residual_feature_maps[t_idx,b_idx,:] += after_gcn_feature[t_idx*max_typhoon_number+ty_n] * resized_b_gcn_masks[t_idx][ty_n].float()
+# 
         input = input + residual_feature_maps
         outputs_stage, state_stage = rnn(input, None)
 
