@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, '../../')
 import torch
+import torch.nn as nn
 from experiments.config import cfg
 from torch.optim import lr_scheduler
 from nowcasting.evaluation.loss import Weighted_mse_mae
@@ -15,10 +16,10 @@ import os
 ### Config
 
 # batch_size = cfg.GLOBAL.BATCH_SZIE
-batch_size = 4
+batch_size = 8
 epoch = 30
 
-LR_step_size = 4000
+LR_step_size = 2000
 gamma = 0.7
 
 LR = 1e-3 # 1e-3
@@ -39,7 +40,7 @@ optimizer = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR, weight_deca
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
 # mult_step_scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30000, 60000], gamma=0.1)
 
-folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1] + "_no_seed"
+folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1] + "_no_seed_again"
 
 OUT_LEN = cfg.RAIN.BENCHMARK.OUT_LEN
 evaluater = GPMEvaluation(seq_len=OUT_LEN, use_central=False)

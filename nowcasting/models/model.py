@@ -34,7 +34,6 @@ class EF(nn.Module):
         return output
 
 class EF_GCN(nn.Module):
-
     def __init__(self, encoder, forecaster):
         super().__init__()
         self.encoder = encoder
@@ -56,6 +55,6 @@ class Predictor(nn.Module):
         :param input:
         :return:
         '''
-        input = input.squeeze(2).permute((1, 0, 2, 3))
+        input = input.squeeze(2)
         output = self.model(input)
-        return output.unsqueeze(2).permute((1, 0, 2, 3, 4))
+        return output.unsqueeze(2).permute((0, 1, 2, 3, 4))

@@ -17,7 +17,7 @@ from experiments.net_params import encoder_params, forecaster_params
 
 ### Config
 
-batch_size = 2 #cfg.GLOBAL.BATCH_SZIE
+batch_size = 8 #cfg.GLOBAL.BATCH_SZIE
 epoch = 30
 
 LR_step_size = 4000
