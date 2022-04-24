@@ -130,7 +130,7 @@ class TrajGRU(BaseConvRNN):
 
     # inputs 和 states 不同时为空
     # inputs: S*B*C*H*W
-    def forward(self, inputs=None, states=None, seq_len=cfg.RAIN.BENCHMARK.IN_LEN): #seq_len=cfg.HKO.BENCHMARK.IN_LEN):
+    def forward(self, inputs=None, states=None, seq_len=cfg.RAIN.BENCHMARK.IN_LEN): #seq_len=cfg.RAIN.BENCHMARK.IN_LEN):
         if states is None:
             states = torch.zeros((inputs.size(1), self._num_filter, self._state_height,
                                   self._state_width), dtype=torch.float).to(cfg.GLOBAL.DEVICE)

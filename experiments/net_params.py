@@ -1,17 +1,9 @@
-import sys
-sys.path.insert(0, '..')
-# from nowcasting.hko.dataloader import HKOIterator
 from experiments.config import cfg
 from collections import OrderedDict
 from nowcasting.models.trajGRU import TrajGRU
-# from nowcasting.train_and_test import train_and_test
-# from nowcasting.hko.evaluation import *
 from nowcasting.models.convLSTM import ConvLSTM
 
 batch_size = cfg.GLOBAL.BATCH_SZIE
-
-# IN_LEN = cfg.HKO.BENCHMARK.IN_LEN
-# OUT_LEN = cfg.HKO.BENCHMARK.OUT_LEN
 IN_LEN = cfg.RAIN.BENCHMARK.IN_LEN
 OUT_LEN = cfg.RAIN.BENCHMARK.OUT_LEN
 
@@ -68,18 +60,6 @@ forecaster_params = [
     ]
 ]
 
-
-# build model
-# conv2d_params = OrderedDict({
-#     'conv1_relu_1': [5, 64, 7, 5, 1],
-#     'conv2_relu_1': [64, 192, 5, 3, 1],
-#     'conv3_relu_1': [192, 192, 3, 2, 1],
-#     'deconv1_relu_1': [192, 192, 4, 2, 1],
-#     'deconv2_relu_1': [192, 64, 5, 3, 1],
-#     'deconv3_relu_1': [64, 64, 7, 5, 1],
-#     'conv3_relu_2': [64, 20, 3, 1, 1],
-#     'conv3_3': [20, 20, 1, 1, 0]
-# })
 conv2d_params = OrderedDict({
     'conv1_relu_1': [6, 64, 7, 5, 1], # 100
     'conv2_relu_1': [64, 192, 5, 2, 2], # 33

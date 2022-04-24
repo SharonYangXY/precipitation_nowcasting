@@ -22,7 +22,7 @@ class ConvLSTM(nn.Module):
 
     # inputs and states should not be all none
     # inputs: S*B*C*H*W
-    def forward(self, inputs=None, states=None, seq_len=cfg.RAIN.BENCHMARK.IN_LEN):#seq_len=cfg.HKO.BENCHMARK.IN_LEN):
+    def forward(self, inputs=None, states=None, seq_len=cfg.RAIN.BENCHMARK.IN_LEN):#seq_len=cfg.RAIN.BENCHMARK.IN_LEN):
 
         if states is None:
             c = nn.Parameter(torch.zeros((inputs.size(1), self._num_filter, self._state_height,
@@ -51,6 +51,10 @@ class ConvLSTM(nn.Module):
             c = f*c + i*torch.tanh(tmp_c)
             o = torch.sigmoid(o+self.Wco*c)
             h = o*torch.tanh(c)
+
+
+
             outputs.append(h)
+
         return torch.stack(outputs), (h, c)
 

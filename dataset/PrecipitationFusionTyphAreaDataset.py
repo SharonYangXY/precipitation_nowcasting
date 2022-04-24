@@ -20,7 +20,6 @@ class PrecipitationFusionTyphAreaDataset(torch.utils.data.Dataset):
         with open(os.path.join(root, file_name), 'r') as dataset_file:
             self.dataset_list = dataset_file.readlines()
         dataset_file.close()
-        # print("init Dataset")
 
     def __getitem__(self, index):
         file_path_list = self.dataset_list[index].strip().split(",")
@@ -31,7 +30,7 @@ class PrecipitationFusionTyphAreaDataset(torch.utils.data.Dataset):
         for i in range(len(file_path_list)):
             item = np.load(os.path.join(self.root, file_path_list[i].replace("\\", "/")), allow_pickle=True)
             item_typh = np.load(os.path.join(self.root + "/typh", file_path_list[i].replace("\\", "/")), allow_pickle=True)
-            # 降水台风3通道
+            # precipitation typh 3 channel
             item_channel = []
             item_channel.append(item["precipitation"].squeeze().astype(np.float32))
             item_channel.append(item['typh_speed'].astype(np.float32))
@@ -51,6 +50,8 @@ class PrecipitationFusionTyphAreaDataset(torch.utils.data.Dataset):
         typh_point_list = np.array(typh_point_list) #[12, 1, 7]
         
         gcn_masks = (self.get_gcn_mask_maps(typh_point_list))
+        typh_gcn_masks = (self.get_typh_gcn_mask_maps(typh_point_list))
+        
 #         print("gcn_masks", gcn_masks.shape) # (6, 3, 600, 500)
         # 数据增强
         if self.if_train:
@@ -66,14 +67,47 @@ class PrecipitationFusionTyphAreaDataset(torch.utils.data.Dataset):
         # numpy数组转换为torch
         precipitation, mask, typhoon = torch.from_numpy(precipitation), torch.from_numpy(mask), torch.from_numpy(typhoon)
         gcn_masks = torch.from_numpy(gcn_masks)
+        typh_gcn_masks = torch.from_numpy(typh_gcn_masks)
 
-        return precipitation[0:6], typhoon[0:6], precipitation[6:12, 0:1], typhoon[6:12], mask[6:12], gcn_masks
+        return precipitation[0:6], typhoon[0:6], precipitation[6:12, 0:1], typhoon[6:12], mask[6:12], gcn_masks, typh_gcn_masks
 
     def __len__(self):
         # print("getlen")
         return len(self.dataset_list)
     
-    def get_gcn_mask_maps(self, typh_point_list, expand_pixels=25):
+    def get_typh_gcn_mask_maps(self, typh_point_list, expand_pixels=3):
+        #typh_point_list [12, 1, 7]
+        input_typh_point_list = typh_point_list[0:6]
+        all_input_masks = []
+        for i in range(0, 6):
+            temp_input_mask = []
+            if input_typh_point_list[i].any() == None or len(input_typh_point_list[i]) == 0:
+                temp_map = np.zeros((600, 500), dtype=np.float32)
+                for t in range(0, self.max_typhoon_number):
+                    temp_input_mask.append(temp_map)
+            else:
+                for j in range(0, input_typh_point_list[i].shape[0]):
+                    if j > self.max_typhoon_number-1:
+                        continue
+                    x, y = input_typh_point_list[i][j][0], input_typh_point_list[i][j][1]
+                    left_top_x = max(0, int(x-expand_pixels))
+                    left_top_y = max(0, int(y-expand_pixels))
+                    right_bot_x = min(600, int(x+expand_pixels))
+                    right_bot_y = min(500, int(y+expand_pixels))
+                    temp_map = np.zeros((600, 500), dtype=np.float32)
+                    temp_map[left_top_x:right_bot_x,left_top_y:right_bot_y] = 1.0
+                    temp_input_mask.append(temp_map)
+                if input_typh_point_list[i].shape[0] < self.max_typhoon_number:
+                    for t in range(0, self.max_typhoon_number-input_typh_point_list[i].shape[0]):
+                        temp_map = np.zeros((600, 500), dtype=np.float32)
+                        temp_input_mask.append(temp_map)
+            temp_input_mask = np.array(temp_input_mask).astype(float)
+#             print ("temp_input_mask", temp_input_mask.shape)
+            all_input_masks.append(temp_input_mask)
+        all_input_masks = np.array(all_input_masks)
+        return all_input_masks
+    
+    def get_gcn_mask_maps(self, typh_point_list, expand_pixels=20):
         #typh_point_list [12, 1, 7]
         input_typh_point_list = typh_point_list[0:6]
 #         print (input_typh_point_list.shape)
@@ -94,7 +128,7 @@ class PrecipitationFusionTyphAreaDataset(torch.utils.data.Dataset):
                     right_bot_x = min(600, int(x+expand_pixels))
                     right_bot_y = min(500, int(y+expand_pixels))
                     temp_map = np.zeros((600, 500), dtype=np.float32)
-                    temp_map[left_top_x:left_top_y,right_bot_x:right_bot_y] = 1.0
+                    temp_map[left_top_x:right_bot_x,left_top_y:right_bot_y] = 1.0
                     temp_input_mask.append(temp_map)
                 if input_typh_point_list[i].shape[0] < self.max_typhoon_number:
                     for t in range(0, self.max_typhoon_number-input_typh_point_list[i].shape[0]):

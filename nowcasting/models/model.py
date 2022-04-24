@@ -39,9 +39,22 @@ class EF_GCN(nn.Module):
         self.encoder = encoder
         self.forecaster = forecaster
 
-    def forward(self, input, gcn_masks):
-        state = self.encoder(input, gcn_masks)
+    def forward(self, input, gcn_masks, typh_gcn_masks):
+        state = self.encoder(input, gcn_masks, typh_gcn_masks)
         output = self.forecaster(state)
+        return output
+
+class EF_Trans(nn.Module):
+    def __init__(self, encoder, trans_module, forecaster):
+        super().__init__()
+        self.encoder = encoder
+        self.trans_module = trans_module
+        self.forecaster = forecaster
+
+    def forward(self, input):
+        state = self.encoder(input)
+        trans_state = self.trans_module(state)
+        output = self.forecaster(trans_state)
         return output
 
 class Predictor(nn.Module):

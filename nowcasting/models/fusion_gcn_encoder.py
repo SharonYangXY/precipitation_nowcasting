@@ -9,9 +9,9 @@ class FusionGCNEncoder(nn.Module):
         self.typh_encoder = typh_encoder
 
     # input: 5D S*B*I*H*W
-    def forward(self, input, gcn_masks):
+    def forward(self, input, gcn_masks, typh_gcn_masks):
         output_precipitation = self.image_enconder(input[:, :, 0:1, :, :], gcn_masks)
-        output_typh = self.typh_encoder(input[:, :, 1:3, :, :])
+        output_typh = self.typh_encoder(input[:, :, 1:3, :, :], typh_gcn_masks)
         output = []
         for i in range(len(output_precipitation)):
             precipitation_h = output_precipitation[i][0]

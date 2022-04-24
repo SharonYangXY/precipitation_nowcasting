@@ -5,10 +5,8 @@ except:
 import numpy as np
 import os
 import logging
-# from nowcasting.hko.dataloader import get_exclude_mask
 from nowcasting.helpers.msssim import _SSIMForMultiScale
 from experiments.config import cfg
-from nowcasting.utils import *
 
 
 def get_hit_miss_counts(prediction, truth, mask=None, thresholds=None, sum_batch=False):
@@ -47,7 +45,7 @@ def get_hit_miss_counts(prediction, truth, mask=None, thresholds=None, sum_batch
         TN
     """
     if thresholds is None:
-        thresholds = cfg.HKO.EVALUATION.THRESHOLDS
+        thresholds = cfg.RAIN.EVALUATION.THRESHOLDS
     assert 5 == prediction.ndim
     assert 5 == truth.ndim
     assert prediction.shape == truth.shape
@@ -193,9 +191,9 @@ def get_GDL(prediction, truth, mask, sum_batch=False):
 
 def get_balancing_weights(data, mask, base_balancing_weights=None, thresholds=None):
     if thresholds is None:
-        thresholds = cfg.HKO.EVALUATION.THRESHOLDS
+        thresholds = cfg.RAIN.EVALUATION.THRESHOLDS
     if base_balancing_weights is None:
-        base_balancing_weights = cfg.HKO.EVALUATION.BALANCING_WEIGHTS
+        base_balancing_weights = cfg.RAIN.EVALUATION.BALANCING_WEIGHTS
     thresholds = np.array(thresholds, dtype=np.float32).reshape((1, 1, 1, 1, 1, len(thresholds)))
     weights = np.ones_like(data) * base_balancing_weights[0]
     threshold_mask = np.expand_dims(data, axis=5) >= thresholds
@@ -221,8 +219,8 @@ class GPMEvaluation(object):
     def __init__(self, seq_len, use_central, no_ssim=True, threholds=None,
                  central_region=None):
         if central_region is None:
-            central_region = cfg.HKO.EVALUATION.CENTRAL_REGION
-        self._thresholds = cfg.HKO.EVALUATION.THRESHOLDS if threholds is None else threholds
+            central_region = cfg.RAIN.EVALUATION.CENTRAL_REGION
+        self._thresholds = cfg.RAIN.EVALUATION.THRESHOLDS if threholds is None else threholds
         self._seq_len = seq_len
         self._no_ssim = no_ssim
         self._use_central = use_central
@@ -299,7 +297,7 @@ class GPMEvaluation(object):
         mse = (mask * np.square(pred - gt)).sum(axis=(2, 3, 4))
         mae = (mask * np.abs(pred - gt)).sum(axis=(2, 3, 4))
         weights = get_balancing_weights_numba(data=gt, mask=mask,
-                                              base_balancing_weights=cfg.HKO.EVALUATION.BALANCING_WEIGHTS,
+                                              base_balancing_weights=cfg.RAIN.EVALUATION.BALANCING_WEIGHTS,
                                               thresholds=self._thresholds)
         ## <2, <5, ... 不同权值的 MSE.
         # S*B*1*H*W
@@ -423,7 +421,7 @@ class GPMEvaluation(object):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         f = open(path, 'wb')
-        logging.info("Saving HKOEvaluation to %s" % path)
+        logging.info("Saving RAINEvaluation to %s" % path)
         pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()
 
@@ -434,7 +432,7 @@ class GPMEvaluation(object):
         pod, far, csi, hss, gss, mse, mae, balanced_mse, balanced_mae, gdl = self.calculate_stat()
         # pod, far, csi, hss, gss, mse, mae, gdl = self.calculate_stat()
         f = open(path, 'w')
-        logging.info("Saving readable txt of HKOEvaluation to %s" % path)
+        logging.info("Saving readable txt of RAINEvaluation to %s" % path)
         f.write("Total Sequence Num: %d, Out Seq Len: %d, Use Central: %d\n"
                 % (self._total_batch_num,
                    self._seq_len,

@@ -18,7 +18,6 @@ class PrecipitationDataset(torch.utils.data.Dataset):
         with open(os.path.join(root, file_name), 'r') as dataset_file:
             self.dataset_list = dataset_file.readlines()
         dataset_file.close()
-        # print("init Dataset")
 
     def __getitem__(self, index):
         file_path_list = self.dataset_list[index].strip().split(",")
@@ -46,33 +45,9 @@ class PrecipitationDataset(torch.utils.data.Dataset):
         precipitation, mask, typhoon = torch.from_numpy(precipitation), torch.from_numpy(mask), torch.from_numpy(
             typhoon)
 
-        # print(precipitation.size())
-
         return precipitation[0:6], typhoon[0:6], precipitation[6:12], typhoon[6:12], mask[6:12]
 
-        # transform = transforms.Compose([
-        #     transforms.ToTensor(),  # 转为Tensor
-        #     # transforms.Normalize((0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5),
-        #     #                      (0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)),  # 归一化
-        # ])
-        # for i in range(len(file_path_list)):
-        #     item = np.load(os.path.join(self.root, file_path_list[i].replace("\\", "/")))
-        #     precipitation.append(item["precipitation"])
-        #     typhoon.append(item["typhoon"])
-        #     mask.append(item["mask"])
-        # # print("getitem")
-        # precipitation = np.array(precipitation).squeeze().transpose(1, 2, 0)  # remove dim 1.
-        #
-        # precipitation = transform(precipitation)  # [12, 600, 500]
-        # # print(precipitation.size())
-        # precipitation = precipitation.unsqueeze(1)  # [12, 1, 600, 500]
-        # # print(precipitation.size())
-        # typhoon = np.array(typhoon)
-        # return precipitation[0:6], torch.from_numpy(typhoon[0:6]), precipitation[6:12], torch.from_numpy(
-        #     typhoon[6:12]),torch.from_numpy(np.array(mask[6:12]))
-
     def __len__(self):
-        # print("getlen")
         return len(self.dataset_list)
 
     def my_transform(self, image, mask, scale=(0.8, 1.2), crop_h=600, crop_w=500):

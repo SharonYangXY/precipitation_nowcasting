@@ -1,6 +1,5 @@
 import numpy as np
 from numba import jit, float32, boolean, int32
-# from nowcasting.hko.evaluation import rainfall_to_pixel
 from experiments.config import cfg
 
 import warnings
@@ -77,7 +76,7 @@ def get_hit_miss_counts_numba(prediction, truth, mask, thresholds=None):
         TN
     """
     if thresholds is None:
-        thresholds = cfg.HKO.EVALUATION.THRESHOLDS
+        thresholds = cfg.RAIN.EVALUATION.THRESHOLDS
     assert 5 == prediction.ndim
     assert 5 == truth.ndim
     assert prediction.shape == truth.shape
@@ -134,9 +133,9 @@ def get_balancing_weights_numba(data, mask, base_balancing_weights=None, thresho
 
     """
     if thresholds is None:
-        thresholds = cfg.HKO.EVALUATION.THRESHOLDS
+        thresholds = cfg.RAIN.EVALUATION.THRESHOLDS
     if base_balancing_weights is None:
-        base_balancing_weights = cfg.HKO.EVALUATION.BALANCING_WEIGHTS
+        base_balancing_weights = cfg.RAIN.EVALUATION.BALANCING_WEIGHTS
     assert data.shape[2] == 1
     thresholds = [thresholds[i] for i in range(len(thresholds))]
     thresholds = sorted(thresholds)
@@ -166,63 +165,3 @@ def _get_balancing_weights_numba(data, mask, base_balancing_weights, thresholds)
                         if ele >= thresholds[threshold_num - 1]:
                             ret[i][j][0][m][n] = base_balancing_weights[threshold_num]
     return ret
-
-if __name__ == '__main__':
-    from nowcasting.hko_evaluation import get_GDL, get_hit_miss_counts, get_balancing_weights
-    from numpy.testing import assert_allclose
-
-    prediction = np.random.uniform(size=(10, 16, 1, 480, 480))
-    truth = np.random.uniform(size=(10, 16, 1, 480, 480))
-    mask = np.random.randint(low=0, high=2, size=(10, 16, 1, 480, 480)).astype(np.bool)
-    import time
-
-    begin = time.time()
-    gdl = get_GDL(prediction=prediction, truth=truth, mask=mask)
-    end = time.time()
-
-    print("numpy gdl:", end - begin)
-    begin = time.time()
-    gdl_numba = get_GDL_numba(prediction=prediction, truth=truth, mask=mask)
-    end = time.time()
-    print("numba gdl:", end - begin)
-    # gdl_mx = mx_get_GDL(prediction=prediction, truth=truth, mask=mask)
-    # print gdl_mx
-    assert_allclose(gdl, gdl_numba, rtol=1E-4, atol=1E-3)
-
-    begin = time.time()
-    for i in range(5):
-        hits, misses, false_alarms, correct_negatives = get_hit_miss_counts(prediction=prediction,
-                                                                            truth=truth,
-                                                                            mask=mask)
-    end = time.time()
-    print("numpy hits misses:", end - begin)
-
-    begin = time.time()
-    for i in range(5):
-        hits_numba, misses_numba, false_alarms_numba, correct_negatives_numba = get_hit_miss_counts_numba(
-            prediction=prediction,
-            truth=truth,
-            mask=mask)
-    end = time.time()
-    print("numba hits misses:", end - begin)
-    print(np.abs(hits - hits_numba).max())
-    print(np.abs(misses - misses_numba).max(), np.abs(misses - misses_numba).argmax())
-    print(np.abs(false_alarms - false_alarms_numba).max(),
-          np.abs(false_alarms - false_alarms_numba).argmax())
-    print(np.abs(correct_negatives - correct_negatives_numba).max(),
-          np.abs(correct_negatives - correct_negatives_numba).argmax())
-
-    begin = time.time()
-    for i in range(5):
-        weights_npy = get_balancing_weights(data=truth, mask=mask,
-                                            base_balancing_weights=None, thresholds=None)
-    end = time.time()
-    print("numpy balancing weights:", end - begin)
-
-    begin = time.time()
-    for i in range(5):
-        weights_numba = get_balancing_weights_numba(data=truth, mask=mask,
-                                                    base_balancing_weights=None, thresholds=None)
-    end = time.time()
-    print("numba balancing weights:", end - begin)
-    print("Inconsistent Number:", (np.abs(weights_npy - weights_numba) > 1E-5).sum())

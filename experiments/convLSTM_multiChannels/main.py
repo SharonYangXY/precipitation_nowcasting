@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, '../../')
 import torch
 import torch.nn as nn
 from experiments.config import cfg
@@ -22,25 +19,13 @@ warnings.filterwarnings('ignore')
 ### Config
 
 batch_size = cfg.GLOBAL.BATCH_SZIE
-epoch = 30
+epoch = 100
 
-LR_step_size = 4000  # 20000
+LR_step_size = 4000
 gamma = 0.7
 
 LR = 1e-3  # 1e-3 1e-2
 WD = 1e-6
-
-
-seed = 666
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-
-
-# torch.backends.cudnn.benchmark = False
-# torch.backends.cudnn.deterministic =True
-# torch.backends.cudnn.enabled = True
-
 
 criterion = Weighted_mse_mae().to(cfg.GLOBAL.DEVICE)
 
@@ -53,23 +38,16 @@ forecaster = Forecaster(convlstm_multiChannel_forecaster_params[0], convlstm_mul
 encoder_forecaster = EF(encoder, forecaster)
 
 # multigpu
-encoder_forecaster = nn.DataParallel(encoder_forecaster, device_ids=[0, 1]).to(cfg.GLOBAL.DEVICE)
+encoder_forecaster = nn.DataParallel(encoder_forecaster, device_ids=[0]).to(cfg.GLOBAL.DEVICE)
 
 optimizer = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR, weight_decay=WD)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
 
-folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1]
+folder_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1]+ "_0910"
 OUT_LEN = cfg.RAIN.BENCHMARK.OUT_LEN
 evaluater = GPMEvaluation(seq_len=OUT_LEN, use_central=False)
 
 root = cfg.RAIN.MultiChannelROOT
-# train_file_name = cfg.RAIN.TRAIN_file_NAME
-# val_file_name = cfg.RAIN.VAL_file_NAME
-# test_file_name = cfg.RAIN.TEST_file_NAME
-#
-# train_dataset = Dataset(root, train_file_name)
-# test_dataset = Dataset(root, test_file_name)
-# val_dataset = Dataset(root, val_file_name)
 
 typh_train_file_name = cfg.RAIN.TYPH_TRAIN_file_NAME
 typh_val_file_name = cfg.RAIN.TYPH_VAL_file_NAME
@@ -79,19 +57,8 @@ typh_train_dataset = Dataset(root, typh_train_file_name)
 typh_test_dataset = Dataset(root, typh_test_file_name)
 typh_val_dataset = Dataset(root, typh_val_file_name)
 
-# no_typh_train_file_name = cfg.RAIN.NO_TYPH_TRAIN_file_NAME
-# no_typh_val_file_name = cfg.RAIN.NO_TYPH_VAL_file_NAME
-# no_typh_test_file_name = cfg.RAIN.NO_TYPH_TEST_file_NAME
-#
-# no_typh_train_dataset = Dataset(root, no_typh_train_file_name)
-# no_typh_test_dataset = Dataset(root, no_typh_test_file_name)
-# no_typh_val_dataset = Dataset(root, no_typh_val_file_name)
 
 if __name__ == '__main__':
     print(encoder_forecaster)
-    # train_and_test(train_dataset,test_dataset,val_dataset,encoder_forecaster, optimizer, criterion, exp_lr_scheduler, batch_size, epoch, folder_name，evaluater)
-
     train_and_test(typh_train_dataset, typh_test_dataset, typh_val_dataset, encoder_forecaster, optimizer, criterion,
                    exp_lr_scheduler, batch_size, epoch, folder_name, evaluater)
-    # train_and_test(no_typh_train_dataset, no_typh_test_dataset, no_typh_val_dataset, encoder_forecaster, optimizer,
-    #                criterion, exp_lr_scheduler, batch_size, epoch, folder_name,evaluater)

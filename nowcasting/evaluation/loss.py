@@ -1,7 +1,6 @@
 from torch import nn
 import torch
 from experiments.config import cfg
-# from nowcasting.utils import rainfall_to_pixel, dBZ_to_pixel
 import torch.nn.functional as F
 
 class Weighted_mse_mae(nn.Module):
@@ -13,9 +12,9 @@ class Weighted_mse_mae(nn.Module):
         self._lambda = LAMBDA
 
     def forward(self, input, target, mask):
-        balancing_weights = cfg.HKO.EVALUATION.BALANCING_WEIGHTS
+        balancing_weights = cfg.RAIN.EVALUATION.BALANCING_WEIGHTS
         weights = torch.ones_like(input) * balancing_weights[0]
-        thresholds = cfg.HKO.EVALUATION.THRESHOLDS
+        thresholds = cfg.RAIN.EVALUATION.THRESHOLDS
         for i, threshold in enumerate(thresholds):
             weights = weights + (balancing_weights[i + 1] - balancing_weights[i]) * (target >= threshold).float()
         weights = weights * mask.float()
@@ -49,7 +48,7 @@ class WeightedCrossEntropyLoss(nn.Module):
     # target: S*B*1*H*W, original data, range [0, 1]
     # mask: S*B*1*H*W
     def forward(self, input, target, mask):
-        assert input.size(0) == cfg.HKO.BENCHMARK.OUT_LEN
+        assert input.size(0) == cfg.RAIN.BENCHMARK.OUT_LEN
         # F.cross_entropy should be B*C*S*H*W
         input = input.permute((1, 2, 0, 3, 4))
         # B*S*H*W

@@ -11,15 +11,6 @@ from dataset.DataLoaderX import DataLoaderX
 from dataset.DataProfetcher import DataPrefetcher
 from utils.logger import Logger
 
-# now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-# 设置默认的level为DEBUG
-# 设置log的格式
-# logging.basicConfig(
-#     level=logging.INFO,
-#     filename=os.path.join(cfg.GLOBAL.MODEL_SAVE_DIR,'logs/typh_convLSTM_' + now + '.log'),
-#     filemode='a',  ##模式，有w和a，w就是写模式，每次都会重新写日志，覆盖之前的日志#a是追加模式，默认如果不写的话，就是追加模式
-#     format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
-# )
 log = Logger(os.path.join(cfg.GLOBAL.MODEL_SAVE_DIR, 'logs/typh_convLSTM.log'), level='debug')
 
 
@@ -80,7 +71,7 @@ def train_and_test(train_dataset, test_dataset, val_dataset, encoder_forecaster,
             if (iter + 1) % 10 == 0:
                 log.logger.info(
                     'Epoch %s / %s  Train_Progress: %s iter / %s iters, train_batch_loss: %s' %
-                    (cur_epoch, epochs, iter, len(train_loader), train_batch_loss / (10 * batch_size)))
+                    (cur_epoch, epochs, iter, len(train_loader), train_batch_loss / 10))
                 train_batch_loss = 0.0
             iter += 1
             train_batch = train_prefetcher.next()
@@ -90,7 +81,7 @@ def train_and_test(train_dataset, test_dataset, val_dataset, encoder_forecaster,
         # train_pod, train_far, train_csi, train_hss, train_gss, train_mse, train_mae, train_balanced_mse, train_balanced_mae, train_gdl = evaluater.calculate_stat()
         train_balanced_mse, train_balanced_mae, train_pod, train_far, train_csi, train_hss, train_pc, train_recall, train_f1_score = evaluater.calculate_stat()
         test_iteration_interval = len(train_loader) * batch_size
-        train_loss = train_loss / test_iteration_interval
+        train_loss = train_loss / len(train_loader)#test_iteration_interval
         evaluater.clear_all()
         log.logger.info("epoch % s 训练结束" % cur_epoch)
 
@@ -118,7 +109,7 @@ def train_and_test(train_dataset, test_dataset, val_dataset, encoder_forecaster,
                 if (val_iter + 1) % 10 == 0:
                     log.logger.info(
                         'Epoch %s / %s  EAL_Progress: %s iter / %s iters, val_batch_loss: %s' %
-                        (cur_epoch, epochs, val_iter, len(val_loader), val_batch_loss / (10 * batch_size)))
+                        (cur_epoch, epochs, val_iter, len(val_loader), val_batch_loss / 10))
                     val_batch_loss = 0.0
                 val_iter += 1
                 val_batch = val_prefetcher.next()
@@ -129,7 +120,7 @@ def train_and_test(train_dataset, test_dataset, val_dataset, encoder_forecaster,
             evaluater.clear_all()
 
             log.logger.info("计算epoch % s 验证loss" % cur_epoch)
-            valid_loss = valid_loss / (len(val_loader) * batch_size)
+            valid_loss = valid_loss / len(val_loader)
             log.logger.info("epoch % s 验证结束" % cur_epoch)
 
         log.logger.info("记录epoch % s 训练以及验证loss" % cur_epoch)
@@ -193,7 +184,7 @@ def plot_result(writer, itera, train_result, valid_result):
         "valid": valid_balanced_mae.mean()
     }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("pod&precision/{}".format(thresh), {
             "train": train_pod[:, i].mean(),
             "valid": valid_pod[:, i].mean(),
@@ -204,7 +195,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_pod[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("far/{}".format(thresh), {
             "train": train_far[:, i].mean(),
             "valid": valid_far[:, i].mean()
@@ -215,7 +206,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_far[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("csi/{}".format(thresh), {
             "train": train_csi[:, i].mean(),
             "valid": valid_csi[:, i].mean()
@@ -226,7 +217,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_csi[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("hss/{}".format(thresh), {
             "train": train_hss[:, i].mean(),
             "valid": valid_hss[:, i].mean()
@@ -237,7 +228,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_hss[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("pc/{}".format(thresh), {
             "train": train_pc[:, i].mean(),
             "valid": valid_pc[:, i].mean()
@@ -248,7 +239,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_pc[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("recall/{}".format(thresh), {
             "train": train_recall[:, i].mean(),
             "valid": valid_recall[:, i].mean()
@@ -259,7 +250,7 @@ def plot_result(writer, itera, train_result, valid_result):
                 "valid_frame" + str(j + 1): valid_recall[j, i]
             }, itera)
 
-    for i, thresh in enumerate(cfg.HKO.EVALUATION.THRESHOLDS):
+    for i, thresh in enumerate(cfg.RAIN.EVALUATION.THRESHOLDS):
         writer.add_scalars("f1_score/{}".format(thresh), {
             "train": train_f1_score[:, i].mean(),
             "valid": valid_f1_score[:, i].mean()

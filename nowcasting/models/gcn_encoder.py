@@ -191,7 +191,7 @@ class Encoder(nn.Module):
 #                     + after_gcn_feature[t_idx*3+1] * resized_b_gcn_masks[t_idx][1].float() + after_gcn_feature[t_idx*3+2] * resized_b_gcn_masks[t_idx][2].float()
 #                     residual_feature_maps[t_idx,b_idx,:] += after_gcn_feature[t_idx*max_typhoon_number+ty_n] * resized_b_gcn_masks[t_idx][ty_n].float()
 # 
-        input = input + residual_feature_maps
+        input = input + residual_feature_maps * 0.5
         outputs_stage, state_stage = rnn(input, None)
 
         return outputs_stage, state_stage
